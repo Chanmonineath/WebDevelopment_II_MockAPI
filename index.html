@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Users Client</title>
+</head>
+<body>
+    <h1>User List</h1>
+    
+    <button id="fetchBtn">Fetch Users</button>
+    
+    <table id="userTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Email</th>
+            </tr>
+        </thead>
+        <tbody id="userTableBody">
+            <!-- User data will be inserted here -->
+        </tbody>
+    </table>
+
+    <div>
+        <h2>Add New User</h2>
+        <form id="addUserForm">
+            <div>
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div>
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            <div>
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit">Add User</button>
+            <div id="formStatus"></div>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('fetchBtn').addEventListener('click', function() {
+            const userTableBody = document.getElementById('userTableBody');
+            
+            // Clear previous results
+            userTableBody.innerHTML = '';
+            
+            // Fetch users from the API
+            fetch('https://68fe36107c700772bb1324fa.mockapi.io/api/v1/users/users')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(users => {
+                    // Display users in the table
+                    users.forEach(user => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${user.id}</td>
+                            <td>${user.username}</td>
+                            <td>${user.email}</td>
+                        `;
+                        userTableBody.appendChild(row);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching users:', error);
+                    userTableBody.innerHTML = `<tr><td colspan="3">Error fetching users: ${error.message}</td></tr>`;
+                });
+        });
+
+        // Add event listener for form submission
+        document.getElementById('addUserForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            const formStatus = document.getElementById('formStatus');
+            formStatus.textContent = 'Adding user...';
+            
+            // Get form values
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            // Create user object
+            const newUser = {
+                username: username,
+                email: email,
+                password: password
+            };
+            
+            // Send POST request to API
+            fetch('https://68fe36107c700772bb1324fa.mockapi.io/api/v1/users/users', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(newUser)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.message || 'Failed to add user');
+                    });
+                }
+                return response.json();
+            })
+            .then(result => {
+                // Display success message
+                formStatus.textContent = `User added successfully!`;
+                
+                // Clear form
+                document.getElementById('username').value = '';
+                document.getElementById('email').value = '';
+                document.getElementById('password').value = '';
+                
+                // Trigger click event to refresh fetch users
+                document.getElementById('fetchBtn').click();
+            })
+            .catch(error => {
+                console.error('Error adding user:', error);
+                formStatus.textContent = `Error: ${error.message}`;
+            });
+        });
+    </script>
+</body>
+</html>
